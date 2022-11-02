@@ -1,79 +1,59 @@
 const express = require('express');
-
 const router = express.Router();
-
-//Listado de PRODUCTOS
+const productService = require('../services/products.service');
+const product = new productService();
 
 router.get('/', (req, res) => {
-  res.json([
-    {
-      name: 'Monitor Asus 144hz 24 Pulgadas',
-      price: 65000,
-    },
-    {
-      name: 'Monitor Sentley 75hz Curvo 27 Pulgadas',
-      price: 53500,
-    },
-    {
-      name: 'Monitor Gigabyte 240hz 24 Pulgadas',
-      price: 97000,
-    },
-    {
-      name: 'Mouse Logitech G305',
-      price: 6500,
-    },
-    {
-      name: 'Mouse Razer Viper Mini',
-      price: 14350,
-    },
-    {
-      name: 'Mouse Corsair Scimitar Pro',
-      price: 20000,
-    },
-  ]);
+    let {limit, offset} = req.query;
+    res.json(product.find({offset, limit}));
 });
 
 router.get('/:id', (req, res) => {
-  const { id } = req.params;
-  if (id === '999') {
-    res.status(404).json({
-      message: 'not found'
-    });
-  } else {
-    res.status(200).json({
-      id,
-      name: 'Teclado Genius',
-      price: 1700
-    });
-  };
+    const {id} = req.params;
+    res.json(product.findOne(id));
+});
 
 
-})
+router.post("/", (req, res) => {
+    const {name, price, image} = req.body;
 
-router.post('/', (req, res) => {
-  const body = req.body;
-  res.status(201).json({
-    message: 'Create',
-    data: body
-  })
-})
+    const newProduct = product.create({name, price, image});
+    if (newProduct) {
+        res.status(201).json({
+            message: "Product added",
+            data: newProduct
+        });
 
-router.patch('/:id', (req, res) => {
-  const { id } = req.params;
-  const body = req.body;
-  res.json({
-    message: 'Update',
-    data: body,
-    id,
-  })
-})
+    } else
+        res.status(501).json({message: "internal error"});
+});
 
-router.delete('/:id', (req, res) => {
-  const { id } = req.params;
-  res.json({
-    message: 'Deleted',
-    id,
-  })
-})
+
+router.patch("/:id", ((req, res) => {
+    const id = parseInt(req.params.id);
+    const {name, price, image} = req.body;
+    const updateProduct = product.update(id, {name, price, image});
+    if (updateProduct) {
+        res.json({
+            message: "Product updated",
+            data: req.body
+        });
+    } else {
+        res.status(501).json({message: "Internal error"})
+    }
+
+
+}));
+
+router.delete("/:id", (req, res) => {
+    const id = parseInt(req.params.id);
+    const currentProduct = product.delete(id);
+    if (currentProduct) {
+        res.status(201).json({message: "Product deleted", data: currentProduct});
+    } else {
+        res.status(404).json({message: "Product not found"});
+    }
+});
+
 
 module.exports = router;
